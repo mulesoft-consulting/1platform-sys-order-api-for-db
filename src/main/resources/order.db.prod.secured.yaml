@@ -1,6 +1,6 @@
 db:
-  user: "MB"
-  password: "blabla"
+  user: "orders"
+  password: "Mule1379"
   
 keystore:
   password: "Mule1379?"

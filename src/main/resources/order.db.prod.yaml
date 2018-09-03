@@ -1,4 +1,4 @@
 db:
-  host: "localhost"
+  host: "mysql.shared.demos.mulesoft.com"
   port: "3306"
   database: "1platform_orders"

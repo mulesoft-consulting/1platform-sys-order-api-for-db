@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
 http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
 
-	<global-property doc:name="Global Property" doc:id="5a2db50e-6b96-406f-a3dc-c47b456df745" name="env" value="dev" />
+    <global-property doc:name="Global Property" doc:id="5a2db50e-6b96-406f-a3dc-c47b456df745" name="env" value="prod" />
 	<global-property doc:name="Global Property" doc:id="6206680b-21ba-4b1b-9464-9b63844764cf" name="key" value="Mule1379" />
 	<configuration-properties doc:name="Configuration properties" doc:id="cc0433e0-8c1d-4ffa-bdd7-bfdb293176b7" file="order.db.${env}.yaml" />
-	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="36ded70c-c92f-457a-90fc-a76693371bcf" file="order.db.dev.secured.yaml" key="Mule1234" >
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="36ded70c-c92f-457a-90fc-a76693371bcf" file="order.db.${env}.secured.yaml" key="${key}" >
 		<secure-properties:encrypt algorithm="Blowfish" />
 	</secure-properties:config>
-    <http:listener-config name="order-api-spec-httpListenerConfig">
-        <http:listener-connection host="0.0.0.0" port="8081" />
+    <http:listener-config name="order-api-for-commdix-mysql-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS">
+            <tls:context>
+                <tls:key-store type="jks" path="keystore.jks" keyPassword="${secure::keystore.password}" password="${secure::keystore.password}" />
+            </tls:context>
+        </http:listener-connection>
     </http:listener-config>
-    <apikit:config name="order-api-spec-config" raml="order-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
-    <!-- db:config name="Database_Config" doc:name="Database Config" doc:id="5e919f50-b31b-4589-a533-104f3612618e" >
-		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${secure::db.user}" password="${secure::db.password}" database="${db.database}" />
-	</db:config-->
-
-	<db:config name="Database_Config" doc:name="Database Config" doc:id="2e889002-5a76-430c-8f5e-f6e929f5595a" >
+    <apikit:config name="order-api-for-commdix-mysql-config" raml="order-api-for-commdix-mysql.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <db:config name="Database_Config" doc:name="Database Config" >
 		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${secure::db.user}" password="${secure::db.password}" database="${db.database}" />
 	</db:config>
-	<flow name="order-api-spec-main">
-        <http:listener config-ref="order-api-spec-httpListenerConfig" path="/api/*">
+    <flow name="order-api-for-commdix-mysql-main">
+        <http:listener config-ref="order-api-for-commdix-mysql-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
             </http:response>
@@ -31,7 +32,7 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
             </http:error-response>
         </http:listener>
-        <apikit:router config-ref="order-api-spec-config" />
+        <apikit:router config-ref="order-api-for-commdix-mysql-config" />
         <error-handler>
             <on-error-propagate type="APIKIT:BAD_REQUEST">
                 <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
@@ -113,8 +114,8 @@ output application/json
             </on-error-propagate>
         </error-handler>
     </flow>
-    <flow name="order-api-spec-console">
-        <http:listener config-ref="order-api-spec-httpListenerConfig" path="/console/*">
+    <flow name="order-api-for-commdix-mysql-console">
+        <http:listener config-ref="order-api-for-commdix-mysql-httpListenerConfig" path="/console/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
             </http:response>
@@ -123,10 +124,11 @@ output application/json
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
             </http:error-response>
         </http:listener>
-        <apikit:console config-ref="order-api-spec-config" />
+        <apikit:console config-ref="order-api-for-commdix-mysql-config" />
         <error-handler>
             <on-error-propagate type="APIKIT:NOT_FOUND">
-                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
                     <ee:message>
                         <ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -140,7 +142,7 @@ output application/json
             </on-error-propagate>
         </error-handler>
     </flow>
-    <flow name="put:\orders\(id):application\json:order-api-spec-config">
+    <flow name="put:\orders\(id):application\json:order-api-for-commdix-mysql-config">
         <ee:transform doc:name="Transform Message" doc:id="dad505a2-dc81-4730-a242-ce6af1b92e3d" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -172,7 +174,7 @@ var status = {
 			</otherwise>
 		</choice>
     </flow>
-    <flow name="delete:\orders\(id):order-api-spec-config">
+    <flow name="delete:\orders\(id):order-api-for-commdix-mysql-config">
         <db:delete doc:name="Delete" doc:id="36c85773-a36f-4870-817a-56f16a747fec" config-ref="Database_Config">
 			<db:sql >DELETE FROM `orders` WHERE `ORDERID` = :orderId ;</db:sql>
 			<db:input-parameters ><![CDATA[#[{
@@ -189,18 +191,30 @@ var status = {
 			</otherwise>
 		</choice>
     </flow>
-	<flow name="get:\orders\(id):order-api-spec-config">
-        <db:select doc:name="Select order" doc:id="12e7a856-cfaa-40d0-94ea-0d9da5b9cf4c" config-ref="Database_Config">
-			<db:sql >SELECT * FROM `orders` WHERE `ORDERID` = :orderId;</db:sql>
-			<db:input-parameters ><![CDATA[#[{"orderId": attributes.uriParams.id}]]]></db:input-parameters>
-		</db:select>
-		<db:select doc:name="Select items" doc:id="02b976f8-c4bf-4f0c-a9c3-a6ac241fe238" config-ref="Database_Config" target="items">
-			<db:sql >SELECT * FROM `items` WHERE `ORDERID` = :orderId ;</db:sql>
-			<db:input-parameters ><![CDATA[#[{"orderId": payload[0].ORDERID}]]]></db:input-parameters>
-		</db:select>
-		<ee:transform doc:name="Transform Message" doc:id="8264f191-f3d3-4b7c-b452-8da06fe9ee13" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+    <flow name="get:\orders:order-api-for-commdix-mysql-config">
+        <choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47" >
+			<when expression="#[attributes.queryParams.customerId == null]" >
+				<set-variable value="404" doc:name="Set Variable" doc:id="0ac81a90-d0e7-4f5b-b758-f954ce7d14dd" variableName="httpStatus"/>
+				<set-payload doc:name="Set Payload" doc:id="371f7925-aa1d-49e6-964e-46f939de226f" value='{  "message": "customerId must be defined" }'/>
+			</when>
+			<otherwise >
+				<db:select doc:name="Select" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config">
+					<db:sql >SELECT * FROM `orders` WHERE `CUSTOMERID` = :customerId ;</db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	"customerId": attributes.queryParams.customerId
+}]]]></db:input-parameters>
+				</db:select>
+				<choice doc:name="Choice" doc:id="a1e4e897-a01e-4264-862e-b9ea62094522" >
+					<when expression="#[sizeOf(payload) &gt; 0]" >
+						<set-variable value="#[[]]" doc:name="Set Variable" doc:id="8e0bf287-0874-42b0-8dba-895eb290653f" variableName="orders" />
+						<foreach doc:name="For Each" doc:id="8fad3a77-b715-42d5-a0cf-2f33b918a3e9" collection="#[payload]">
+					<db:select doc:name="Select" doc:id="46e42724-6e55-4fe3-9fe4-21b2802f5586" config-ref="Database_Config" target="items">
+						<db:sql>SELECT * FROM `items` WHERE `ORDERID` = :orderId ;</db:sql>
+						<db:input-parameters><![CDATA[#[{"orderId": payload.ORDERID}]]]></db:input-parameters>
+					</db:select>
+					<ee:transform doc:name="Transform Message" doc:id="ed2d92e5-7375-4b80-97cb-e438a33417d9">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 
 var deliveryMethod = {
@@ -214,13 +228,15 @@ var status = {
 }
 ---
 {
-	orderId: payload[0].ORDERID,
-	price: payload[0].PRICE,
-	status: status[payload[0].STATUS as String] default "UNKNOWN",
-	trackingNumber: payload[0].TRACKINGNUMB,
-	customerId: payload[0].CUSTOMERID,
-	orderItems:vars.items map (item, i) -> {
-		locationId: item.LOCATIONID,
+	orderId: payload.ORDERID,
+	totalAmount: payload.PRICE,
+	status: status[payload.STATUS as String] default "UNKNOWN",
+	trackingNumber: payload.TRACKINGNUMB,
+	customerId: payload.CUSTOMERID,
+	orderItems: vars.items map (item, i) -> {
+		location: {
+			id: item.LOCATIONID
+		},
 		orderLine: item.ORDERITEMID,
 		product: {
 			id: item.PRODUCTID,
@@ -229,17 +245,112 @@ var status = {
 		quantity: {
 			ordered: item.QUANTITY
 		}, 
-		deliveryMethod: deliveryMethod[item.DELIVERYMETHOD as String] default "",
+		delivery: {
+			method: deliveryMethod[item.DELIVERYMETHOD as String] default ""
+		}
+	}
+}
+]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<set-variable value="#[output application/json --- if (sizeOf(vars.orders) &gt; 0) (vars.orders ++ [payload]) else [payload]]" doc:name="Set Variable" doc:id="9eb8c395-96e2-4bab-bd6b-9a9b778914ad" variableName="orders" />
+				</foreach>
+						<set-payload value="#[vars.orders]" doc:name="Set Payload" doc:id="feaf6391-d5c5-452e-a0e4-025c264d0f11" />
+					</when>
+					<otherwise>
+						<ee:transform doc:name="Transform Message" doc:id="6f3dea7f-dca4-4abe-8772-ea7f98d4e5ca">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-payload>
+							</ee:message>
+							<ee:variables>
+							</ee:variables>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+    </flow>
+    <flow name="get:\orders\(id):order-api-for-commdix-mysql-config">
+        <db:select doc:name="Select order" doc:id="12e7a856-cfaa-40d0-94ea-0d9da5b9cf4c" config-ref="Database_Config">
+			<db:sql >SELECT * FROM `orders` WHERE `ORDERID` = :orderId;</db:sql>
+			<db:input-parameters ><![CDATA[#[{"orderId": attributes.uriParams.id}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="3ba5e531-65df-4bda-bf61-c45525c7a38b" >
+			<when expression="#[sizeOf(payload) &gt; 0]" >
+				<db:select doc:name="Select items" doc:id="02b976f8-c4bf-4f0c-a9c3-a6ac241fe238" config-ref="Database_Config" target="items">
+			<db:sql>SELECT * FROM `items` WHERE `ORDERID` = :orderId ;</db:sql>
+			<db:input-parameters><![CDATA[#[{"orderId": payload[0].ORDERID}]]]></db:input-parameters>
+		</db:select>
+				<ee:transform doc:name="Transform Message" doc:id="8264f191-f3d3-4b7c-b452-8da06fe9ee13">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var deliveryMethod = {
+	PI: "PICKUP",
+	SH: "SHIPMENT"
+}
+var status = {
+	D: "Draft",
+	C: "Completed",
+	P: "Processing"
+}
+---
+{
+	orderId: payload[0].ORDERID,
+	totalAmount: payload[0].PRICE,
+	status: status[payload[0].STATUS as String] default "UNKNOWN",
+	trackingNumber: payload[0].TRACKINGNUMB,
+	customerId: payload[0].CUSTOMERID,
+	orderItems: vars.items map (item, i) -> {
+		delivery: {
+			method: deliveryMethod[item.DELIVERYMETHOD as String] default "",
+		},
+		orderLine: item.ORDERITEMID,
+		location: {
+			id: item.LOCATIONID
+		},
+		product: {
+			id: item.PRODUCTID,
+			name: item.PRODUCTNAME
+		},
+		quantity: {
+			ordered: item.QUANTITY
+		}
 	}
 }
 ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="4b5e2ec9-7b24-4fa7-a9c2-aa631d9c73c8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "resource not found"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+404]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
     </flow>
-    <flow name="post:\orders:application\json:order-api-spec-config">
-        <ee:transform doc:name="Transform Message" doc:id="8fa5f849-df51-43ee-b32a-44c5630cae20">
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+    <flow name="post:\orders:application\json:order-api-for-commdix-mysql-config">
+        <set-variable value="#[[]]" doc:name="Set Variable" doc:id="e026fb0c-cc1a-424c-857c-28e35f0cd2fe" variableName="messages"/>
+		<foreach doc:name="For Each" doc:id="3d7cc2d8-bb64-4d66-a719-1db5f021c363" collection="#[payload]">
+			<ee:transform doc:name="Transform Message" doc:id="8fa5f849-df51-43ee-b32a-44c5630cae20">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 var orderType = {
 	pickupItems: "PII",
@@ -257,113 +368,85 @@ var status = {
 }
 ---
 {
-	customerId: payload[0].customerId,
-	status: status[payload[0].status as String] default "",
+	customerId: payload.customerId,
+	status: status[payload.status as String] default "",
+	price: payload.totalAmount,
 	items: 
-		payload[0].orderItems map (item, i) -> {
-			orderItemId: item.orderItemId,
+		payload.orderItems map (item, i) -> {
+			orderItemId: item.orderLine,
 			orderType: "SHI",
-			productId: item.productId,
-			productName: item.productName,
-			locationId: item.locationId,
-			deliveryMethod: deliveryMethod[item.deliveryMethod as String],
+			productId: item.product.id,
+			productName: item.product.name,
+			locationId: item.location.id,
+			deliveryMethod: deliveryMethod[upper(item.delivery.method as String default "SHIPMENT")],
 			quantity: item.quantity.ordered
 		}
 	
 }
 ]]></ee:set-payload>
 			</ee:message>
-			<ee:variables >
+			<ee:variables>
 			</ee:variables>
 		</ee:transform>
-		<set-variable value="#[payload.items]" doc:name="Set Variable items" doc:id="6c6a813c-2707-4c4f-b2d3-0d7a20533039" variableName="items"/>
-		<db:insert doc:name="Insert new order" doc:id="3fc7d50b-deda-4d70-8f4d-6805738618f6" config-ref="Database_Config">
-			<db:sql >INSERT INTO `orders`(`CUSTOMERID`, `STATUS`, `PRICE`, `TRACKINGNUMB`) VALUES (:customerId, :status, 0, 123);</db:sql>
-			<db:input-parameters ><![CDATA[#[{
+			<set-variable value="#[payload.items]" doc:name="Set Variable items" doc:id="6c6a813c-2707-4c4f-b2d3-0d7a20533039" variableName="items" />
+			<db:insert doc:name="Insert new order" doc:id="3fc7d50b-deda-4d70-8f4d-6805738618f6" config-ref="Database_Config" autoGenerateKeys="true">
+			<db:sql>INSERT INTO `orders`(`CUSTOMERID`, `STATUS`, `PRICE`, `TRACKINGNUMB`) VALUES (:customerId, :status, :price, 123);</db:sql>
+			<db:input-parameters><![CDATA[#[{
 	"customerId": payload.customerId, 
-	"status": payload.status
+	"status": payload.status,
+	"price": payload.price
 }]]]></db:input-parameters>
+				<db:auto-generated-keys-column-names >
+					<db:auto-generated-keys-column-name value="ORDERID" />
+				</db:auto-generated-keys-column-names>
 		</db:insert>
-		<db:select doc:name="Select created orderId" doc:id="d8952ff3-c606-41ce-abd6-d574f251e908" config-ref="Database_Config" target="orderId" targetValue="#[payload[0].ORDERID]">
-			<db:sql >SELECT `ORDERID` FROM `orders` ORDER BY `ORDERID`  DESC LIMIT 1;</db:sql>
-		</db:select>
-		<foreach doc:name="For Each" doc:id="ba2bd65b-53c6-40d7-accd-69ec0c148308" collection="#[vars.items]">
-			<db:insert doc:name="Insert new order item" doc:id="a15ed890-b43f-4388-915e-3b4c8439e7bc" config-ref="Database_Config">
-				<db:sql >INSERT INTO `items` (`ORDERITEMID`, `TYPE`, `PRODUCTID`, `PRODUCTNAME`, `LOCATIONID`, `DELIVERYMETHOD`, `QUANTITY`, `ORDERID`) VALUES(:orderItemId, :orderType, :productId, :productName, :locationId, :deliveryMethod, :quantity, :orderId);</db:sql>
-				<db:input-parameters ><![CDATA[#[payload ++  {"orderId": vars.orderId}]]]></db:input-parameters>
+			<ee:transform doc:name="Save Order Id" doc:id="329139fe-fc18-486f-a176-d45757c6a104" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="orderId" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.generatedKeys.GENERATED_KEY]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<foreach doc:name="For Each" doc:id="ba2bd65b-53c6-40d7-accd-69ec0c148308" collection="#[vars.items]">
+				<db:insert doc:name="Insert new order item" doc:id="a15ed890-b43f-4388-915e-3b4c8439e7bc" config-ref="Database_Config">
+				<db:sql>INSERT INTO `items` (`ORDERITEMID`, `TYPE`, `PRODUCTID`, `PRODUCTNAME`, `LOCATIONID`, `DELIVERYMETHOD`, `QUANTITY`, `ORDERID`) VALUES(:orderItemId, :orderType, :productId, :productName, :locationId, :deliveryMethod, :quantity, :orderId);</db:sql>
+				<db:input-parameters><![CDATA[#[payload ++ {'orderId': vars.orderId}]]]></db:input-parameters>
 			</db:insert>
+		</foreach>
+			<ee:transform doc:name="Transform Message" doc:id="bfbee118-e1c1-495a-a9cb-f1c1e003527a" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="messages" ><![CDATA[%dw 2.0
+output application/java
+---
+vars.messages ++
+[
+	{
+      "itemId": vars.orderId,
+      "severity": "INFO",
+      "code": "201",
+      "description": "order record created"
+    }
+]]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
 		</foreach>
 		<ee:transform doc:name="Transform Message" doc:id="d915fa0e-8c45-4acd-ac8f-fc881e91ea77" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-[{
-	id: vars.orderId	
-}]]]></ee:set-payload>
+{
+	meta: {
+		totalItems: sizeOf(vars.messages)
+	},
+	messages: vars.messages
+}]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-    </flow>
-	<flow name="get:\orders:order-api-spec-config">
-        <choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47" >
-			<when expression="#[attributes.queryParams.customerId == null]" >
-				<set-variable value="404" doc:name="Set Variable" doc:id="0ac81a90-d0e7-4f5b-b758-f954ce7d14dd" variableName="httpStatus"/>
-				<set-payload doc:name="Set Payload" doc:id="371f7925-aa1d-49e6-964e-46f939de226f" value='{  "message": "ClientId must be defined" }'/>
-			</when>
-			<otherwise >
-				<db:select doc:name="Select" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config">
-					<db:sql >SELECT * FROM `orders` WHERE `CUSTOMERID` = :customerId ;</db:sql>
-					<db:input-parameters ><![CDATA[#[{
-	"customerId": attributes.queryParams.customerId
-}]]]></db:input-parameters>
-				</db:select>
-				<set-variable value="#[[]]" doc:name="Set Variable" doc:id="8e0bf287-0874-42b0-8dba-895eb290653f" variableName="orders"/>
-				<foreach doc:name="For Each" doc:id="8fad3a77-b715-42d5-a0cf-2f33b918a3e9" collection="#[payload]">
-					<db:select doc:name="Select" doc:id="46e42724-6e55-4fe3-9fe4-21b2802f5586" config-ref="Database_Config" target="items">
-						<db:sql >SELECT * FROM `items` WHERE `ORDERID` = :orderId ;</db:sql>
-						<db:input-parameters ><![CDATA[#[{"orderId": payload.ORDERID}]]]></db:input-parameters>
-					</db:select>
-					<ee:transform doc:name="Transform Message" doc:id="ed2d92e5-7375-4b80-97cb-e438a33417d9" >
-						<ee:message >
-							<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
-
-var deliveryMethod = {
-	PI: "PICKUP",
-	SH: "SHIPMENT"
-}
-var status = {
-	D: "Draft",
-	C: "Completed",
-	P: "Processing"
-}
----
-{
-	orderId: payload.ORDERID,
-	price: payload.PRICE,
-	status: status[payload.STATUS as String] default "UNKNOWN",
-	trackingNumber: payload.TRACKINGNUMB,
-	customerId: payload.CUSTOMERID,
-	orderItems: vars.items map (item, i) -> {
-		locationId: item.LOCATIONID,
-		orderLine: item.ORDERITEMID,
-		product: {
-			id: item.PRODUCTID,
-			name: item.PRODUCTNAME
-		},
-		quantity: {
-			ordered: item.QUANTITY
-		}, 
-		deliveryMethod: deliveryMethod[item.DELIVERYMETHOD as String] default "",
-	}
-}
-]]></ee:set-payload>
-						</ee:message>
-					</ee:transform>
-					<set-variable value="#[output application/json --- if (sizeOf(vars.orders) &gt; 0) (vars.orders ++ [payload]) else [payload]]" doc:name="Set Variable" doc:id="9eb8c395-96e2-4bab-bd6b-9a9b778914ad" variableName="orders"/>
-				</foreach>
-				<set-payload value="#[vars.orders]" doc:name="Set Payload" doc:id="feaf6391-d5c5-452e-a0e4-025c264d0f11" />
-			</otherwise>
-		</choice>
     </flow>
 </mule>
