@@ -197,7 +197,7 @@ var status = {
         <choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47" >
 			<when expression="#[attributes.queryParams.customerId == null]" >
 				<set-variable value="404" doc:name="Set Variable" doc:id="0ac81a90-d0e7-4f5b-b758-f954ce7d14dd" variableName="httpStatus"/>
-				<set-payload doc:name="Set Payload" doc:id="371f7925-aa1d-49e6-964e-46f939de226f" value='{  "message": "customerId must be defined" }'/>
+				<set-payload doc:name="Set Payload" doc:id="371f7925-aa1d-49e6-964e-46f939de226f" value='{  "message": "customerId must be defined" }' mimeType="application/json"/>
 			</when>
 			<otherwise >
 				<db:select doc:name="Select" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config">
@@ -254,10 +254,61 @@ var status = {
 }
 ]]></ee:set-payload>
 						</ee:message>
+								<ee:variables >
+									<ee:set-variable variableName="orders" ><![CDATA[%dw 2.0
+output application/java
+
+var deliveryMethod = {
+	PI: "PICKUP",
+	SH: "SHIPMENT"
+}
+var status = {
+	D: "Draft",
+	C: "Completed",
+	P: "Processing"
+}
+---
+vars.orders ++
+[{
+	orderId: payload.ORDERID,
+	totalAmount: payload.PRICE,
+	status: status[payload.STATUS as String] default "UNKNOWN",
+	trackingNumber: payload.TRACKINGNUMB,
+	customerId: payload.CUSTOMERID,
+	orderItems: vars.items map (item, i) -> {
+		location: {
+			id: item.LOCATIONID
+		},
+		orderLine: item.ORDERITEMID,
+		product: {
+			id: item.PRODUCTID,
+			name: item.PRODUCTNAME
+		},
+		quantity: {
+			ordered: item.QUANTITY
+		}, 
+		delivery: {
+			method: deliveryMethod[item.DELIVERYMETHOD as String] default ""
+		}
+	}
+}]
+]]></ee:set-variable>
+								</ee:variables>
 					</ee:transform>
-					<set-variable value="#[output application/json --- if (sizeOf(vars.orders) &gt; 0) (vars.orders ++ [payload]) else [payload]]" doc:name="Set Variable" doc:id="9eb8c395-96e2-4bab-bd6b-9a9b778914ad" variableName="orders" />
 				</foreach>
-						<set-payload value="#[vars.orders]" doc:name="Set Payload" doc:id="feaf6391-d5c5-452e-a0e4-025c264d0f11" />
+						<ee:transform doc:name="Transform Message" doc:id="4e3ee333-b41d-4628-a432-8b9edc41a268" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	meta: {
+		totalItems: sizeOf(vars.orders)
+	},
+	orders: vars.orders
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
 					</when>
 					<otherwise>
 						<ee:transform doc:name="Transform Message" doc:id="6f3dea7f-dca4-4abe-8772-ea7f98d4e5ca">
@@ -265,7 +316,12 @@ var status = {
 								<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-[]]]></ee:set-payload>
+{
+	meta: {
+		totalItems: 0
+	},
+	orders: []
+}]]></ee:set-payload>
 							</ee:message>
 							<ee:variables>
 							</ee:variables>
