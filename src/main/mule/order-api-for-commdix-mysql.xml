@@ -231,6 +231,7 @@ var status = {
 ---
 {
 	orderId: payload.ORDERID,
+	sourceSystem: "COMMDIX",
 	totalAmount: payload.PRICE,
 	status: status[payload.STATUS as String] default "UNKNOWN",
 	trackingNumber: payload.TRACKINGNUMB,
@@ -358,6 +359,7 @@ var status = {
 ---
 {
 	orderId: payload[0].ORDERID,
+	sourceSystem: "COMMDIX",
 	totalAmount: payload[0].PRICE,
 	status: status[payload[0].STATUS as String] default "UNKNOWN",
 	trackingNumber: payload[0].TRACKINGNUMB,
