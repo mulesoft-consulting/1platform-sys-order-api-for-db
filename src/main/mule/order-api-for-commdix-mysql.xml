@@ -216,20 +216,24 @@ var status = {
 					</db:select>
 					<ee:transform doc:name="Transform Message" doc:id="ed2d92e5-7375-4b80-97cb-e438a33417d9">
 						<ee:message>
-							<ee:set-payload><![CDATA[%dw 2.0
-output application/json
+						</ee:message>
+								<ee:variables >
+									<ee:set-variable variableName="orders" ><![CDATA[%dw 2.0
+output application/java
 
 var deliveryMethod = {
-	PI: "PICKUP",
-	SH: "SHIPMENT"
+	PI: "Pickup",
+	SH: "Shipment"
 }
+
 var status = {
 	D: "Draft",
 	C: "Completed",
 	P: "Processing"
 }
 ---
-{
+vars.orders ++
+[{
 	orderId: payload.ORDERID as String,
 	sourceSystem: "COMMDIX",
 	totalAmount: payload.PRICE,
@@ -249,47 +253,7 @@ var status = {
 			ordered: item.QUANTITY
 		}, 
 		delivery: {
-			method: deliveryMethod[item.DELIVERYMETHOD as String] default ""
-		}
-	}
-}
-]]></ee:set-payload>
-						</ee:message>
-								<ee:variables >
-									<ee:set-variable variableName="orders" ><![CDATA[%dw 2.0
-output application/java
-
-var deliveryMethod = {
-	PI: "PICKUP",
-	SH: "SHIPMENT"
-}
-var status = {
-	D: "Draft",
-	C: "Completed",
-	P: "Processing"
-}
----
-vars.orders ++
-[{
-	orderId: payload.ORDERID,
-	totalAmount: payload.PRICE,
-	status: status[payload.STATUS as String] default "UNKNOWN",
-	trackingNumber: payload.TRACKINGNUMB,
-	customerId: payload.CUSTOMERID,
-	orderItems: vars.items map (item, i) -> {
-		location: {
-			id: item.LOCATIONID
-		},
-		orderLine: item.ORDERITEMID,
-		product: {
-			id: item.PRODUCTID,
-			name: item.PRODUCTNAME
-		},
-		quantity: {
-			ordered: item.QUANTITY
-		}, 
-		delivery: {
-			method: deliveryMethod[item.DELIVERYMETHOD as String] default ""
+			method: deliveryMethod[item.DELIVERYMETHOD as String] default "Shipment"
 		}
 	}
 }]
@@ -347,9 +311,10 @@ output application/json
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
+
 var deliveryMethod = {
-	PI: "PICKUP",
-	SH: "SHIPMENT"
+	PI: "Pickup",
+	SH: "Shipment"
 }
 var status = {
 	D: "Draft",
@@ -366,7 +331,7 @@ var status = {
 	customerId: payload[0].CUSTOMERID,
 	orderItems: vars.items map (item, i) -> {
 		delivery: {
-			method: deliveryMethod[item.DELIVERYMETHOD as String] default "",
+			method: deliveryMethod[item.DELIVERYMETHOD as String] default "Shipment",
 		},
 		orderLine: item.ORDERITEMID,
 		location: {
@@ -418,8 +383,8 @@ var orderType = {
 	partnersItems: "PAI"
 }
 var deliveryMethod = {
-	PICKUP: "PI",
-	SHIPMENT: "SH"
+	PI: "Pickup",
+	SH: "Shipment"
 }
 var status = {
 	"Draft": "D",
@@ -438,7 +403,7 @@ var status = {
 			productId: item.product.id,
 			productName: item.product.name,
 			locationId: item.location.id,
-			deliveryMethod: deliveryMethod[upper(item.delivery.method as String default "SHIPMENT")],
+			deliveryMethod: deliveryMethod[upper(item.delivery.method as String default "Shipment")],
 			quantity: item.quantity.ordered
 		}
 	

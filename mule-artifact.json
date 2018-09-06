@@ -1,1 +1,4 @@
-{"minMuleVersion":"4.1.2"}
+{  
+  "secureProperties": ["key", "db.user", "db.password", "keystore.password"],
+  "minMuleVersion":"4.1.2"
+}
