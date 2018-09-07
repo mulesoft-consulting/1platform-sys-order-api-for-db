@@ -1,5 +1,5 @@
 db:
-  host: "localhost"
+  host: "mysql.shared.demos.mulesoft.com"
   port: "3306"
   database: "1platform_orders"
   
@@ -11,7 +11,7 @@ anypoint:
     client_secret: "0874121A1d584e419e86F1360333Ca55"
     visualizer:
       layer: "System"
-      
-autodiscovery:
-  api:
-    id: "15523420"
+
+api:
+  id: "15528736"
+  port: "8086"
