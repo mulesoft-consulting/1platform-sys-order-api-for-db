@@ -196,31 +196,54 @@ var status = {
     <flow name="get:\orders:order-api-for-commdix-mysql-config">
         <choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47" >
 			<when expression="#[attributes.queryParams.customerId == null]" >
-				<set-variable value="404" doc:name="Set Variable" doc:id="0ac81a90-d0e7-4f5b-b758-f954ce7d14dd" variableName="httpStatus"/>
-				<set-payload doc:name="Set Payload" doc:id="371f7925-aa1d-49e6-964e-46f939de226f" value='{  "message": "customerId must be defined" }' mimeType="application/json"/>
+				<ee:transform doc:name="Transform Message" doc:id="3d4c25cf-7bbe-4c26-b688-47d137a5bdff" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	messages: [
+		{
+			"severity": "ERROR",
+			"code": "400",
+			"description": "At least 'customerId' must be defined"
+		}
+	]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
 			</when>
 			<otherwise >
 				<db:select doc:name="Select" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config">
-					<db:sql >SELECT * FROM `orders` WHERE `CUSTOMERID` = :customerId ;</db:sql>
+					<db:sql >SELECT 
+	`orders`.`ORDERID`,
+    `orders`.`CUSTOMERID`,
+    `orders`.`STATUS`,
+    `orders`.`PRICE`,
+    `orders`.`TRACKINGNUMB`,
+    `items`.`ORDERITEMID`,
+    `items`.`TYPE`,
+    `items`.`PRODUCTID`,
+    `items`.`PRODUCTNAME`,
+    `items`.`LOCATIONID`,
+    `items`.`DELIVERYMETHOD`,
+    `items`.`QUANTITY` 
+FROM  
+	`1platform_orders`.`orders`, 
+    `1platform_orders`.`items`
+WHERE 
+	`orders`.`ORDERID` = `items`.`ORDERID` and 
+    `orders`.`CUSTOMERID` = :customerId ;</db:sql>
 					<db:input-parameters ><![CDATA[#[{
 	"customerId": attributes.queryParams.customerId
 }]]]></db:input-parameters>
 				</db:select>
 				<choice doc:name="Choice" doc:id="a1e4e897-a01e-4264-862e-b9ea62094522" >
 					<when expression="#[sizeOf(payload) &gt; 0]" >
-						<set-variable value="#[[]]" doc:name="Set Variable" doc:id="8e0bf287-0874-42b0-8dba-895eb290653f" variableName="orders" />
-						<foreach doc:name="For Each" doc:id="8fad3a77-b715-42d5-a0cf-2f33b918a3e9" collection="#[payload]">
-					<db:select doc:name="Select" doc:id="46e42724-6e55-4fe3-9fe4-21b2802f5586" config-ref="Database_Config" target="items">
-						<db:sql>SELECT * FROM `items` WHERE `ORDERID` = :orderId ;</db:sql>
-						<db:input-parameters><![CDATA[#[{"orderId": payload.ORDERID}]]]></db:input-parameters>
-					</db:select>
-					<ee:transform doc:name="Transform Message" doc:id="ed2d92e5-7375-4b80-97cb-e438a33417d9">
-						<ee:message>
-						</ee:message>
-								<ee:variables >
-									<ee:set-variable variableName="orders" ><![CDATA[%dw 2.0
-output application/java
-
+						<ee:transform doc:name="Transform Message" doc:id="4e3ee333-b41d-4628-a432-8b9edc41a268" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
 var deliveryMethod = {
 	PI: "Pickup",
 	SH: "Shipment"
@@ -231,46 +254,36 @@ var status = {
 	C: "Completed",
 	P: "Processing"
 }
----
-vars.orders ++
-[{
-	orderId: payload.ORDERID as String,
-	sourceSystem: "COMMDIX",
-	totalAmount: payload.PRICE,
-	status: status[payload.STATUS as String] default "UNKNOWN",
-	trackingNumber: payload.TRACKINGNUMB,
-	customerId: payload.CUSTOMERID,
-	orderItems: vars.items map (item, i) -> {
-		location: {
-			id: item.LOCATIONID
-		},
-		orderLine: item.ORDERITEMID,
-		product: {
-			id: item.PRODUCTID,
-			name: item.PRODUCTNAME
-		},
-		quantity: {
-			ordered: item.QUANTITY
-		}, 
-		delivery: {
-			method: deliveryMethod[item.DELIVERYMETHOD as String] default "Shipment"
-		}
-	}
-}]
-]]></ee:set-variable>
-								</ee:variables>
-					</ee:transform>
-				</foreach>
-						<ee:transform doc:name="Transform Message" doc:id="4e3ee333-b41d-4628-a432-8b9edc41a268" >
-							<ee:message >
-								<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
+var orders = payload groupBy $.ORDERID pluck $
 ---
 {
 	meta: {
-		totalItems: sizeOf(vars.orders)
+		totalItems: sizeOf(orders)
 	},
-	orders: vars.orders
+	orders: orders map (itemList, i) -> {
+		orderId: itemList[0].ORDERID as String,
+		sourceSystem: "COMMDIX",
+		totalAmount: itemList[0].PRICE,
+		status: status[itemList[0].STATUS as String] default "UNKNOWN",
+		trackingNumber: itemList[0].TRACKINGNUMB,
+		customerId: itemList[0].CUSTOMERID,
+		orderItems: itemList map (item, i) -> {
+			location: {
+				id: item.LOCATIONID
+			},
+			orderLine: item.ORDERITEMID,
+			product: {
+				id: item.PRODUCTID,
+				name: item.PRODUCTNAME
+			},
+			quantity: {
+				ordered: item.QUANTITY
+			}, 
+			delivery: {
+				method: deliveryMethod[item.DELIVERYMETHOD as String] default "Shipment"
+			}
+		}
+	}
 }]]></ee:set-payload>
 							</ee:message>
 						</ee:transform>
