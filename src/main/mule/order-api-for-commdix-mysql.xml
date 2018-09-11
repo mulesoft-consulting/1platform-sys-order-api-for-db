@@ -8,6 +8,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 
     <global-property doc:name="Global Property" doc:id="5a2db50e-6b96-406f-a3dc-c47b456df745" name="env" value="dev" />
 	<global-property doc:name="Global Property" doc:id="6206680b-21ba-4b1b-9464-9b63844764cf" name="key" value="Mule1379" />
+	<configuration doc:name="HTTP Configuration" defaultResponseTimeout="60000" />
 	<configuration-properties doc:name="Configuration properties" doc:id="cc0433e0-8c1d-4ffa-bdd7-bfdb293176b7" file="order.db.${env}.yaml" />
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="36ded70c-c92f-457a-90fc-a76693371bcf" file="order.db.${env}.secured.yaml" key="${key}" >
 		<secure-properties:encrypt algorithm="Blowfish" />
