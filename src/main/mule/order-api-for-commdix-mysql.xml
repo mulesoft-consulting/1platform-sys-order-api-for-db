@@ -418,7 +418,7 @@ var status = {
 			orderType: "SHI",
 			productId: item.product.id,
 			productName: item.product.name,
-			locationId: item.location.id,
+			locationId: item.location.id default "s1",
 			deliveryMethod: deliveryMethod[upper(item.delivery.method as String default "Shipment")] default "SH",
 			quantity: item.quantity.ordered
 		}
