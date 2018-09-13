@@ -270,11 +270,11 @@ var orders = payload groupBy $.ORDERID pluck $
 		customerId: itemList[0].CUSTOMERID,
 		orderItems: itemList map (item, i) -> {
 			location: {
-				id: item.LOCATIONID
+				id: (item.LOCATIONID as String) default "s1"
 			},
 			orderLine: item.ORDERITEMID,
 			product: {
-				id: item.PRODUCTID,
+				id: item.PRODUCTID  as String,
 				name: item.PRODUCTNAME
 			},
 			quantity: {
@@ -349,10 +349,10 @@ var status = {
 		},
 		orderLine: item.ORDERITEMID,
 		location: {
-			id: item.LOCATIONID
+			id: (item.LOCATIONID as String) default "s1"
 		},
 		product: {
-			id: item.PRODUCTID,
+			id: item.PRODUCTID as String,
 			name: item.PRODUCTNAME
 		},
 		quantity: {
