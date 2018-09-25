@@ -1,0 +1,17 @@
+db:
+  host: 
+  port: 
+  database: 
+  
+anypoint:
+  platform:
+    analytics_base_uri: 
+    base_uri: 
+    client_id: 
+    client_secret: 
+    visualizer:
+      layer: 
+
+api:
+  id: 
+  port: 
