@@ -5,26 +5,14 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
 http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
 http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
-
-    <global-property doc:name="Global Property" doc:id="5a2db50e-6b96-406f-a3dc-c47b456df745" name="env" value="dev" />
-	<global-property doc:name="Global Property" doc:id="6206680b-21ba-4b1b-9464-9b63844764cf" name="key" value="Mule1379" />
-	<configuration doc:name="HTTP Configuration" defaultResponseTimeout="60000" />
-	<configuration-properties doc:name="Configuration properties" doc:id="cc0433e0-8c1d-4ffa-bdd7-bfdb293176b7" file="order.db.${env}.yaml" />
-	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="36ded70c-c92f-457a-90fc-a76693371bcf" file="order.db.${env}.secured.yaml" key="${key}" >
-		<secure-properties:encrypt algorithm="Blowfish" />
-	</secure-properties:config>
     <http:listener-config name="order-api-for-commdix-mysql-httpListenerConfig">
-        <http:listener-connection host="0.0.0.0" port="${api.port}" protocol="HTTPS">
+        <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
             <tls:context>
-                <tls:key-store alias="localhost" type="jks" path="localhost.jks" keyPassword="${secure::keystore.password}" password="${secure::keystore.password}" />
+                <tls:key-store alias="localhost" type="jks" path="localhost.jks" keyPassword="${keystore.password}" password="${keystore.password}" />
             </tls:context>
         </http:listener-connection>
     </http:listener-config>
     <apikit:config name="order-api-for-commdix-mysql-config" raml="order-api-for-commdix-mysql.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
-    <db:config name="Database_Config" doc:name="Database Config" >
-		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${secure::db.user}" password="${secure::db.password}" database="${db.database}" />
-	</db:config>
-    <api-gateway:autodiscovery apiId="${api.id}" doc:name="API Autodiscovery" doc:id="952ff5f6-6abe-48bd-b974-86f69917b45c" flowRef="order-api-for-commdix-mysql-main" />
 	<flow name="order-api-for-commdix-mysql-main">
         <http:listener config-ref="order-api-for-commdix-mysql-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
