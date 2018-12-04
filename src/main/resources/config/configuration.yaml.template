@@ -8,18 +8,9 @@ db:
   password:
   database: 
   
-anypoint:
-  platform:
-    analytics_base_uri: 
-    base_uri: 
-    client_id: 
-    client_secret: 
-    visualizer:
-      layer: 
-
 api:
   autodiscovery: 
 
 keystore:
-	path:
-	password:
+  path:
+  password:

@@ -8,7 +8,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
     <http:listener-config name="order-api-for-commdix-mysql-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
             <tls:context>
-                <tls:key-store alias="localhost" type="jks" path="localhost.jks" keyPassword="${keystore.password}" password="${keystore.password}" />
+                <tls:key-store type="jks" path="${keystore.path}" keyPassword="${keystore.password}" password="${keystore.password}" />
             </tls:context>
         </http:listener-connection>
     </http:listener-config>

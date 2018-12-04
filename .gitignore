@@ -25,6 +25,8 @@ local.properties
 .loadpath
 .project
 .classpath
+*.yaml
+*.jks
 
 # External tool builders
 .externalToolBuilders/

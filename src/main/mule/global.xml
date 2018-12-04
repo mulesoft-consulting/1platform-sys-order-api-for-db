@@ -7,7 +7,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
 	<configuration-properties doc:name="Configuration properties" doc:id="52954734-7ccb-4bbc-b456-c4d5b7df8ef0" file="config/configuration.yaml" />
     <db:config name="Database_Config" doc:name="Database Config" >
-		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${db.user}" password="${db.password}" database="${db.database}" />
+		<db:my-sql-connection host="${mysql.host}" port="${mysql.port}" user="${mysql.user}" password="${mysql.password}" database="${mysql.schema}" />
 	</db:config>
     <api-gateway:autodiscovery apiId="${api.autodiscovery}" doc:name="API Autodiscovery" doc:id="b505dd10-15c6-45d5-bc4a-e509724d5943" flowRef="order-api-for-commdix-mysql-main" />
 </mule>
