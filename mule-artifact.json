@@ -1,4 +1,4 @@
 {  
-  "secureProperties": ["key", "db.user", "db.password", "keystore.password"],
+  "secureProperties": ["key", "mysql.user", "mysql.password", "keystore.password"],
   "minMuleVersion":"4.1.2"
 }
