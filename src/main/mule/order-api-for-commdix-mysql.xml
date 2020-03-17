@@ -183,7 +183,20 @@ var status = {
 		</choice>
     </flow>
     <flow name="get:\orders:order-api-for-commdix-mysql-config">
-        <choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47" >
+        <ee:transform doc:name="Save Variables" doc:id="5415004d-e1cc-4443-8aa0-d089281623a7" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="pagination" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	pagingOffset: attributes.queryParams.pagingOffset default 0,
+	maxResults: attributes.queryParams.maxResults default 10
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47" >
 			<when expression="#[attributes.queryParams.customerId == null]" >
 				<ee:transform doc:name="Transform Message" doc:id="3d4c25cf-7bbe-4c26-b688-47d137a5bdff" >
 					<ee:message >
@@ -203,32 +216,50 @@ output application/java
 				</ee:transform>
 			</when>
 			<otherwise >
-				<db:select doc:name="Select" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config">
-					<db:sql >SELECT 
-	`orders`.`ORDERID`,
-    `orders`.`CUSTOMERID`,
-    `orders`.`STATUS`,
-    `orders`.`PRICE`,
-    `orders`.`TRACKINGNUMB`,
-    `items`.`ORDERITEMID`,
-    `items`.`TYPE`,
-    `items`.`PRODUCTID`,
-    `items`.`PRODUCTNAME`,
-    `items`.`LOCATIONID`,
-    `items`.`DELIVERYMETHOD`,
-    `items`.`QUANTITY` 
+				<db:select doc:name="Count Orders" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config" target="ordersCount">
+					<db:sql >SELECT count(*) as COUNT
 FROM  
-	`1platform_orders`.`orders`, 
-    `1platform_orders`.`items`
+	`1platform_orders`.`orders`
 WHERE 
-	`orders`.`ORDERID` = `items`.`ORDERID` and 
     `orders`.`CUSTOMERID` = :customerId ;</db:sql>
 					<db:input-parameters ><![CDATA[#[{
 	"customerId": attributes.queryParams.customerId
 }]]]></db:input-parameters>
 				</db:select>
 				<choice doc:name="Choice" doc:id="a1e4e897-a01e-4264-862e-b9ea62094522" >
-					<when expression="#[sizeOf(payload) &gt; 0]" >
+					<when expression="#[vars.ordersCount.COUNT[0] &gt; 0]" >
+						<db:select doc:name="Select Orders" doc:id="8a5888c8-08e7-46bc-8525-13572fa87b72" config-ref="Database_Config">
+							<db:sql>SELECT orders_page.*,
+	`items`.`ORDERITEMID`,
+    `items`.`TYPE`,
+    `items`.`PRODUCTID`,
+    `items`.`PRODUCTNAME`,
+    `items`.`LOCATIONID`,
+    `items`.`DELIVERYMETHOD`,
+    `items`.`QUANTITY` 
+ FROM
+	(SELECT 
+		`orders`.`ORDERID`,
+    	`orders`.`CUSTOMERID`,
+    	`orders`.`STATUS`,
+    	`orders`.`PRICE`,
+    	`orders`.`TRACKINGNUMB`,
+    	`orders`.`ORDERDATETIME`
+	FROM  `1platform_orders`.`orders`	
+	WHERE `orders`.`CUSTOMERID` = :customerId 
+	ORDER BY ORDERID DESC
+	LIMIT :LIMIT OFFSET :OFFSET) orders_page
+INNER JOIN `1platform_orders`.`items`
+WHERE 
+	orders_page.`ORDERID` = `items`.`ORDERID`;
+    
+</db:sql>
+							<db:input-parameters><![CDATA[#[{
+	"customerId": attributes.queryParams.customerId,
+	"LIMIT": vars.pagination.maxResults,
+	"OFFSET": vars.pagination.pagingOffset
+}]]]></db:input-parameters>
+						</db:select>
 						<ee:transform doc:name="Transform Message" doc:id="4e3ee333-b41d-4628-a432-8b9edc41a268" >
 							<ee:message >
 								<ee:set-payload ><![CDATA[%dw 2.0
@@ -247,10 +278,13 @@ var orders = payload groupBy $.ORDERID pluck $
 ---
 {
 	meta: {
-		totalItems: sizeOf(orders)
+		totalItems: vars.ordersCount.COUNT[0],
+		pagingOffset: vars.pagination.pagingOffset,
+		maxResults: vars.pagination.maxResults
 	},
 	orders: orders map (itemList, i) -> {
 		orderId: itemList[0].ORDERID as String,
+		orderDateTime: lookup('convert-mysql-date-to-datetimeFlow', itemList[0].ORDERDATETIME as String),
 		sourceSystem: "COMMDIX",
 		totalAmount: itemList[0].PRICE,
 		status: status[itemList[0].STATUS as String] default "UNKNOWN",
@@ -285,7 +319,9 @@ output application/json
 ---
 {
 	meta: {
-		totalItems: 0
+		totalItems: 0,
+		pagingOffset: vars.pagination.pagingOffset,
+		maxResults: vars.pagination.maxResults
 	},
 	orders: []
 }]]></ee:set-payload>
@@ -297,6 +333,24 @@ output application/json
 				</choice>
 			</otherwise>
 		</choice>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1bb8aaba-f3d6-4162-bc8d-06cc44070eb9" >
+				<ee:transform doc:name="Transform Message" doc:id="6b12e07e-614c-4bef-8c8a-a06a146e605b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
     </flow>
     <flow name="get:\orders\(id):order-api-for-commdix-mysql-config">
         <db:select doc:name="Select order" doc:id="12e7a856-cfaa-40d0-94ea-0d9da5b9cf4c" config-ref="Database_Config">
@@ -326,6 +380,7 @@ var status = {
 ---
 {
 	orderId: payload[0].ORDERID as String,
+	orderDateTime: lookup('convert-mysql-date-to-datetimeFlow', payload[0].ORDERDATETIME as String),
 	sourceSystem: "COMMDIX",
 	totalAmount: payload[0].PRICE,
 	status: status[payload[0].STATUS as String] default "UNKNOWN",
@@ -371,6 +426,24 @@ output application/java
 				</ee:transform>
 			</otherwise>
 		</choice>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ae61b4a7-0b53-45fc-b1d1-925d04045f88" >
+				<ee:transform doc:name="Transform Message" doc:id="799d80c7-2853-4093-8179-33df43669788" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
     </flow>
     <flow name="post:\orders:application\json:order-api-for-commdix-mysql-config">
         <set-variable value="#[[]]" doc:name="Set Variable" doc:id="e026fb0c-cc1a-424c-857c-28e35f0cd2fe" variableName="messages"/>
@@ -483,4 +556,22 @@ output application/json
 			</ee:message>
 		</ee:transform>
     </flow>
+	<flow name="convert-mysql-date-to-datetimeFlow" doc:id="69fade1b-c4e9-4357-8a76-930a986dc343" >
+		<logger level="INFO" doc:name="Logger" doc:id="0cc7d0c3-a18f-4dda-b82e-aaafecc73d51" message="#[output application/json ---payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="89798f50-9ddb-4cd5-9d33-6584311fa314" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/json
+var str=(payload replace 'T' with ' ') default '' splitBy ' '
+var creationDate=str[0]
+var creationTime=(str[1] ++ '.000') as LocalTime {format: "HH:mm:ss.SSS"} as String
+//
+var timeZone='GMT'
+//var formattedDate=(creationDate replace /\d{2}:\d{2}:\d{2} \w{3} / with '') as Date {format: "eee MMM dd yyyy"} as String
+//var formattedTime=((creationTime[11 to 18]) ++ '.000') as LocalTime {format: "HH:mm:ss.SSS"} as String
+var finalDateTime= (creationDate ++ ' ' ++ creationTime ++ ' ' ++ timeZone) as DateTime {format: "yyyy-MM-dd HH:mm:ss zz"}
+---
+finalDateTime as String {format: "yyyy-MM-dd'T'HH:mm:ssxxx"}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
 </mule>

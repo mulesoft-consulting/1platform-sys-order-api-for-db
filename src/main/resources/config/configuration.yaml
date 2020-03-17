@@ -1,26 +1,16 @@
 https:
-  port: "8086"
-
-db:
-  host: "mysql.shared.demos.mulesoft.com"
+  port: "8082"
+   
+mysql:
+  host: "1platform-mysql.demos.mulesoft.com" 
   port: "3306"
+  schema: "1platform_orders"
   user: "orders"
-  password: "Mule1379"
-  database: "1platform_orders"
-
-anypoint:
-  platform:
-    analytics_base_uri: "https://analytics-ingest.anypoint.mulesoft.com/"
-    base_uri: "https://anypoint.mulesoft.com/"
-    client_id: "0cbc1707532e4af8add01091888d922c"
-    client_secret: "82f8df08C6164027A22474F20Cf75609"
-    visualizer:
-      layer: "System"
-
+  password: "WaXPdw9GBR4xfQrt"
+  
 api:
-  autodiscovery: "15528736"
-
+  autodiscovery: "15523420"
 
 keystore:
-  path: "localhost.jks"
+  path: "keystore.jks"
   password: "Mule1379?"
