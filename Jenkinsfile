@@ -4,7 +4,7 @@ pipeline {
   }
   environment {
     DEPLOY_CREDS = credentials('deploy-anypoint-user')
-    MULE_VERSION = '4.1.2-AM'
+    MULE_VERSION = '4.1.5'
     BG = "1Platform\\Retail\\Sales"
     WORKER = "Small"
     DB_CREDS = credentials("$BRANCH_NAME-sys-order-api-for-db-mysql-creds")
