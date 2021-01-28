@@ -1,0 +1,180 @@
+#%RAML 1.0 Library
+usage: |
+  provides a resuable implementation of the common
+  collection - collection member patterns commonly found in RESTful APIs
+  along with commonly used query parameters that are applied
+  to collection queries to sort and page through result sets
+  
+uses:
+  hyper: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/hypermedia-library/1.0.4/hypermedia-library.raml
+  common: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/common-library/1.0.11/common-library.raml
+
+types: 
+  collectionTotalItems:
+    type: integer
+    minimum: 0
+    
+  pagingOffset:
+    type: integer
+    minimum: 0
+    default: 0
+    
+  pagingLimit:
+    type: integer
+    minimum: 5
+    default: 10
+    maximum: 20
+    
+  sortingSortKey:
+    type: string
+    
+  CollectionResponseMetadata:
+    type: common.ResponseMetadata
+    properties:
+      totalItems?: collectionTotalItems
+      pagingOffset?: pagingOffset
+      pagingLimit?: pagingLimit
+      sortBy?: sortingSortKey
+      
+  CollectionPagingLinks:
+    properties:
+      self?: hyper.Link
+      first?: hyper.Link
+      prev?: hyper.Link
+      next?: hyper.Link
+      last?: hyper.Link
+          
+  CollectionResponse:
+    type: object
+    properties:
+      meta?: CollectionResponseMetadata
+      links?: CollectionPagingLinks
+
+traits:
+  headers: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/rest-headers-trait/1.0.3/rest-headers-trait.raml
+  #client-id-secured: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/client-id-secured-trait/1.0.1/client-id-secured-trait.raml
+
+resourceTypes:
+  collection:
+    is: [headers]
+    description: |
+      the collection of <<resourcePathName>>
+    get?:
+      description: |
+        query the collection of <<resourcePathName | !pluralize>>
+        may include optional filtering and sorting criteria
+        responses may paginated
+      queryParameters: 
+        maxResults?: 
+          type: number
+          default: 25
+          example: 25
+        pagingOffset?:
+          type: number
+          default: 1
+          example: 1
+      responses:
+        200:
+          description: |
+            query on the collection of <<resourcePathName | !pluralize>>
+            was successful
+          body:
+            <<mediaType>>:
+              type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>CollectionResponse
+        400: &400responseBadRequest
+          description: |
+            one or more query parameters was missing, invalid or malformed
+          body:
+            <<mediaType>>:
+              type: common.Message
+        500: &500responseInternalServerError
+          description: |
+            an internal error occurred that prevented the request from executing
+          body:
+            <<mediaType>>:
+              type: common.Message
+              example: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/500-internal-server-error-response-ex/1.0.1/500-internal-server-error-response-ex.raml
+
+    post?:
+      description: |
+        create a new member of the collection of <<resourcePathName | !pluralize>>
+        from a prototype object
+      body: &requestCollectionMemberPrototype
+        <<mediaType>>:
+          type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>[]
+          #example: <<postRequestExample>>
+
+      responses:
+        201: &201responseCreated
+          description: |
+            a new <<resourcePathName | !singularize>> was created
+          body:
+            <<mediaType>>:
+              type: object
+              properties:
+                meta?: CollectionResponseMetadata
+                links?: CollectionPagingLinks
+                messages:
+                  type:  common.Message[]
+              example: !include examples/post-collection-response.raml
+        202: &202responseAccepted
+          description: |
+            a new <<resourcePathName | !singularize>> was created
+          body:
+            <<mediaType>>:
+              type: object
+              properties:
+                meta?: CollectionResponseMetadata
+                links?: CollectionPagingLinks
+                messages:
+                  type:  common.Message[]
+              example: !include examples/post-collection-response.raml
+        400: *400responseBadRequest
+        409: &409responseConflict
+          description: |
+            a new <<resourcePathName | !singularize>> was not created due to
+            an attempt to violate a system constraint
+          body:
+            <<mediaType>>:
+              type: common.Message
+        500: *500responseInternalServerError
+        
+  member:
+    is: [headers]
+    description: |
+      an individual <<resourcePathName | !singularize>> within the collection
+      of <<resourcePathName | !pluralize>>
+
+    get?:
+      description: |
+        retreive an individual <<resourcePathName | !singularize>>
+      responses:
+        200: &200responseMember
+          description: |
+            the <<resourcePathName | !singularize>> was found and retreived
+          body:
+            <<mediaType>>:
+              type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>
+              #example: <<getMemberResponseExample>>
+    put?:
+      description: |
+        modify an existing <<resourcePathName | !singularize>>
+      body: 
+        <<mediaType>>:
+          type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>
+          #example: <<getMemberResponseExample>>
+      responses:
+        202: *202responseAccepted
+        400: *400responseBadRequest
+        404: &404responseNotFound
+          body: 
+            <<mediaType>>:
+              type: common.Message
+              example: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/404-not-found-response-example/1.0.0/404-not-found-response-example.raml
+        409: *409responseConflict
+        500: *500responseInternalServerError
+    delete?:
+      responses: 
+        202: *202responseAccepted
+        404: *404responseNotFound
+        500: *500responseInternalServerError

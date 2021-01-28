@@ -1,0 +1,43 @@
+#%RAML 1.0 NamedExample
+meta: 
+  messages: 
+    - severity: INFO
+      code: "200"
+      description: OK
+      link: 
+        href: http://localhost
+        title: All good!
+  totalItems: 3
+  pagingOffset: 1
+  pagingLimit: 15
+
+links: 
+  self: 
+    href: http://localhost/currentPage
+    title: Current page
+  first: 
+    href: http://localhost/firstPage
+    title: First Page
+  prev: 
+    href: http://localhost/previousPage
+    title: Previous page
+  next: 
+    href: http://localhost/nextPage
+    title: Next Page
+  last: 
+    href: http://localhost/lastPage
+    title: Last Page
+
+messages:
+- itemId: "2222222"
+  severity: "INFO"
+  code: "201"
+  description: "<<resourcePathName | !singularize>> record created"
+- itemId: "3333333"
+  severity: "INFO"
+  code: "202"
+  description: "Create <<resourcePathName | !singularize>> request accepted"
+- itemId: "111111"
+  severity: "INFO"
+  code: "409"
+  description: "Duplicate <<resourcePathName | !singularize>> record exists"

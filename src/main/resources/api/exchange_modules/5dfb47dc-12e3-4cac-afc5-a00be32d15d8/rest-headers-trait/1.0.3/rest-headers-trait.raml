@@ -1,0 +1,16 @@
+#%RAML 1.0 Trait
+usage: Defines common Rest API headers
+
+headers:
+  Content-Type:
+    displayName: Content-Type
+    description: The Media type of the body of the request (used with POST and PUT requests).
+    enum: [ application/json, application/xml ]
+    default: application/json
+    example: application/json
+  Accept:
+    displayName: Accept
+    description: Media type(s) that is(/are) acceptable for the response
+    enum: [ application/json, application/xml ]
+    default: application/json
+    example: application/json

@@ -1,0 +1,18 @@
+#%RAML 1.0 Library
+usage: Defines the common structure for a phone
+
+types:
+  email:
+      properties:
+        type?: 
+          enum: [Personal, Work, Corporate]
+        address: 
+          type: string
+          example: brettroeder@company.com
+        preferred?: 
+          type: boolean
+          example: false
+        doNotEmail?:
+          type: boolean
+          example: false
+

@@ -1,0 +1,43 @@
+#%RAML 1.0
+title: Order API for CommDix MySQL
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/9428c253-ef35-49ec-a5f7-7e20c1843bbb/{version} # baseUri: http://localhost/{version}
+version: v1
+mediaType: [application/json, application/xml]
+securedBy: [x-custom]
+securitySchemes: 
+  x-custom: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/client-credentials-security-scheme/1.0.3/client-credentials-security-scheme.raml
+
+description: This API expose the CommDix in-house legacy system functionality around Orders.
+
+uses: 
+  order: /exchange_modules/66234019-5a31-4239-ba28-4e6d70f0468a/order-library/1.0.18/order-library.raml
+  collectionRT: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/collection-library/1.1.3/collection-library.raml
+
+/orders:
+  type:  
+    collectionRT.collection:
+      mediaType: application/json
+  get:
+    queryParameters: 
+      orderId?: 
+        minLength: 3
+      customerId:
+        minLength: 3
+      productId?: 
+        minLength: 3
+      productName?:
+        minLength: 3
+      startDate?: date-only
+      endDate?: date-only
+  post:
+  /{id}:
+    type: 
+      collectionRT.member:
+        mediaType: application/json
+    uriParameters: 
+      id:
+        example: "1"
+        default: "1"
+    get:
+    put:
+    delete:

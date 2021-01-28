@@ -1,0 +1,16 @@
+https:
+  port:
+   
+db:
+  host: 
+  port: 
+  user:
+  password:
+  database: 
+  
+api:
+  autodiscovery: 
+
+keystore:
+  path:
+  password:

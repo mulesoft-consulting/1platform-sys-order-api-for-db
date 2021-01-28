@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="order-api-for-commdix-mysql-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
+            <tls:context>
+                <tls:key-store type="jks" path="${keystore.path}" keyPassword="${keystore.password}" password="${keystore.password}" />
+            </tls:context>
+        </http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="order-api-for-commdix-mysql-config" api="order-api-for-commdix-mysql.raml" raml="order-api-for-commdix-mysql.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="order-api-for-commdix-mysql-main">
+        <http:listener config-ref="order-api-for-commdix-mysql-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="order-api-for-commdix-mysql-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="order-api-for-commdix-mysql-console">
+        <http:listener config-ref="order-api-for-commdix-mysql-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="order-api-for-commdix-mysql-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\orders\(id):application\json:order-api-for-commdix-mysql-config">
+        <ee:transform doc:name="Transform Message" doc:id="dad505a2-dc81-4730-a242-ce6af1b92e3d">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var status = {
+	Draft: "D",
+	Completed: "C",
+	Processing: "P"
+}
+---
+{
+	status: status[payload.status as String],
+	orderId: attributes.uriParams.id
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <db:update doc:name="Update" doc:id="2c67fac5-c740-4684-a46d-76570993d859" config-ref="Database_Config">
+            <db:sql>UPDATE `orders` SET `STATUS` = :status WHERE `ORDERID` = :orderId ;</db:sql>
+            <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+        </db:update>
+        <choice doc:name="Choice" doc:id="4476c684-efc0-4d00-8921-8579adda787b">
+            <when expression="#[payload.affectedRows == 1]">
+                <set-payload value="{  &quot;message&quot;: &quot;Order was updated&quot; }" doc:name="Set Payload" doc:id="7dcd084d-d945-4470-a843-9ff56e273f20" />
+            </when>
+            <otherwise>
+                <set-variable value="404" doc:name="Set Variable" doc:id="ffdf502f-bdcb-4e5c-80d9-abd72897712d" variableName="httpStatus" />
+                <set-payload value="{  &quot;message&quot;: &quot;Order not found&quot; }" doc:name="Set Payload" doc:id="6c2a7f39-2276-4068-9d2f-3bc8de09041a" />
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="delete:\orders\(id):order-api-for-commdix-mysql-config">
+        <db:delete doc:name="Delete" doc:id="36c85773-a36f-4870-817a-56f16a747fec" config-ref="Database_Config">
+            <db:sql>DELETE FROM `orders` WHERE `ORDERID` = :orderId ;</db:sql>
+            <db:input-parameters><![CDATA[#[{
+	"orderId": attributes.uriParams.id
+}]]]></db:input-parameters>
+        </db:delete>
+        <choice doc:name="Choice" doc:id="4476c684-efc0-4d00-8921-8579adda787b">
+            <when expression="#[payload == 1]">
+                <set-payload value="{  &quot;message&quot;: &quot;Order was deleted&quot; }" doc:name="Set Payload" doc:id="7dcd084d-d945-4470-a843-9ff56e273f20" />
+            </when>
+            <otherwise>
+                <set-variable value="404" doc:name="Set Variable" doc:id="ffdf502f-bdcb-4e5c-80d9-abd72897712d" variableName="httpStatus" />
+                <set-payload value="{  &quot;message&quot;: &quot;Order not found&quot; }" doc:name="Set Payload" doc:id="6c2a7f39-2276-4068-9d2f-3bc8de09041a" />
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="get:\orders:order-api-for-commdix-mysql-config">
+        <ee:transform doc:name="Save Variables" doc:id="5415004d-e1cc-4443-8aa0-d089281623a7">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="pagination"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	pagingOffset: attributes.queryParams.pagingOffset default 0,
+	maxResults: attributes.queryParams.maxResults default 10
+}]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <choice doc:name="Choice" doc:id="81c79471-3748-4958-95a8-81de144c9d47">
+            <when expression="#[attributes.queryParams.customerId == null]">
+                <ee:transform doc:name="Transform Message" doc:id="3d4c25cf-7bbe-4c26-b688-47d137a5bdff">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	messages: [
+		{
+			"severity": "ERROR",
+			"code": "400",
+			"description": "At least 'customerId' must be defined"
+		}
+	]
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </when>
+            <otherwise>
+                <db:select doc:name="Count Orders" doc:id="9034a460-17bd-4249-9c33-9077e29baa34" config-ref="Database_Config" target="ordersCount">
+                    <db:sql><![CDATA[SELECT count(*) as COUNT
+FROM orders
+WHERE CUSTOMERID = :customerId ;]]></db:sql>
+                    <db:input-parameters><![CDATA[#[{
+	"customerId": attributes.queryParams.customerId
+}]]]></db:input-parameters>
+                </db:select>
+                <choice doc:name="Choice" doc:id="a1e4e897-a01e-4264-862e-b9ea62094522">
+                    <when expression="#[vars.ordersCount.COUNT[0] &gt; 0]">
+                        <db:select doc:name="Select Orders" doc:id="8a5888c8-08e7-46bc-8525-13572fa87b72" config-ref="Database_Config">
+                            <db:sql><![CDATA[SELECT op.*,
+	it.ORDERITEMID,
+    it.TYPE,
+    it.PRODUCTID,
+    it.PRODUCTNAME,
+    it.LOCATIONID,
+    it.DELIVERYMETHOD,
+    it.QUANTITY 
+ FROM
+	(SELECT 
+		ord.ORDERID,
+    	ord.CUSTOMERID,
+    	ord.STATUS,
+    	ord.PRICE,
+    	ord.TRACKINGNUMB,
+    	ord.ORDERDATETIME
+	FROM  orders	ord
+	WHERE ord.CUSTOMERID = :customerId 
+	ORDER BY ord.ORDERID DESC 
+	LIMIT :pLimit OFFSET :pOffset) op 
+INNER JOIN items it ON (op.ORDERID = it.ORDERID)]]></db:sql>
+                            <db:input-parameters><![CDATA[#[{
+	"customerId": attributes.queryParams.customerId,
+	"pLimit": vars.pagination.maxResults as Number,
+	"pOffset": vars.pagination.pagingOffset as Number
+}]]]></db:input-parameters>
+                        </db:select>
+                        <ee:transform doc:name="Transform Message" doc:id="4e3ee333-b41d-4628-a432-8b9edc41a268">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var deliveryMethod = {
+	PI: "Pickup",
+	SH: "Shipment"
+}
+
+var status = {
+	D: "Draft",
+	C: "Completed",
+	P: "Processing"
+}
+var orders = payload groupBy $.ORDERID pluck $
+---
+{
+	meta: {
+		totalItems: vars.ordersCount.COUNT[0],
+		pagingOffset: vars.pagination.pagingOffset,
+		maxResults: vars.pagination.maxResults
+	},
+	orders: orders map (itemList, i) -> {
+		orderId: itemList[0].ORDERID as String,
+		orderDateTime: lookup('convert-mysql-date-to-datetimeFlow', itemList[0].ORDERDATETIME as String),
+		sourceSystem: "COMMDIX",
+		totalAmount: itemList[0].PRICE,
+		status: status[itemList[0].STATUS as String] default "UNKNOWN",
+		trackingNumber: itemList[0].TRACKINGNUMB,
+		customerId: itemList[0].CUSTOMERID,
+		orderItems: itemList map (item, i) -> {
+			location: {
+				id: (item.LOCATIONID as String) default "s1"
+			},
+			orderLine: item.ORDERITEMID,
+			product: {
+				id: item.PRODUCTID  as String,
+				name: item.PRODUCTNAME
+			},
+			quantity: {
+				ordered: item.QUANTITY
+			}, 
+			delivery: {
+				method: deliveryMethod[item.DELIVERYMETHOD as String] default "Shipment"
+			}
+		}
+	}
+}]]></ee:set-payload>
+                            </ee:message>
+                        </ee:transform>
+                    </when>
+                    <otherwise>
+                        <ee:transform doc:name="Transform Message" doc:id="6f3dea7f-dca4-4abe-8772-ea7f98d4e5ca">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	meta: {
+		totalItems: 0,
+		pagingOffset: vars.pagination.pagingOffset,
+		maxResults: vars.pagination.maxResults
+	},
+	orders: []
+}]]></ee:set-payload>
+                            </ee:message>
+                            <ee:variables />
+                        </ee:transform>
+                    </otherwise>
+                </choice>
+            </otherwise>
+        </choice>
+        <error-handler>
+            <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1bb8aaba-f3d6-4162-bc8d-06cc44070eb9">
+                <ee:transform doc:name="Transform Message" doc:id="6b12e07e-614c-4bef-8c8a-a06a146e605b">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-continue>
+        </error-handler>
+    </flow>
+    <flow name="get:\orders\(id):order-api-for-commdix-mysql-config">
+        <db:select doc:name="Select order" doc:id="12e7a856-cfaa-40d0-94ea-0d9da5b9cf4c" config-ref="Database_Config">
+            <db:sql>SELECT * FROM `orders` WHERE `ORDERID` = :orderId;</db:sql>
+            <db:input-parameters><![CDATA[#[{"orderId": attributes.uriParams.id}]]]></db:input-parameters>
+        </db:select>
+        <choice doc:name="Choice" doc:id="3ba5e531-65df-4bda-bf61-c45525c7a38b">
+            <when expression="#[sizeOf(payload) &gt; 0]">
+                <db:select doc:name="Select items" doc:id="02b976f8-c4bf-4f0c-a9c3-a6ac241fe238" config-ref="Database_Config" target="items">
+                    <db:sql>SELECT * FROM `items` WHERE `ORDERID` = :orderId ;</db:sql>
+                    <db:input-parameters><![CDATA[#[{"orderId": payload[0].ORDERID}]]]></db:input-parameters>
+                </db:select>
+                <ee:transform doc:name="Transform Message" doc:id="8264f191-f3d3-4b7c-b452-8da06fe9ee13">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var deliveryMethod = {
+	PI: "Pickup",
+	SH: "Shipment"
+}
+var status = {
+	D: "Draft",
+	C: "Completed",
+	P: "Processing"
+}
+---
+{
+	orderId: payload[0].ORDERID as String,
+	orderDateTime: lookup('convert-mysql-date-to-datetimeFlow', payload[0].ORDERDATETIME as String),
+	sourceSystem: "COMMDIX",
+	totalAmount: payload[0].PRICE,
+	status: status[payload[0].STATUS as String] default "UNKNOWN",
+	trackingNumber: payload[0].TRACKINGNUMB,
+	customerId: payload[0].CUSTOMERID,
+	orderItems: vars.items map (item, i) -> {
+		delivery: {
+			method: deliveryMethod[item.DELIVERYMETHOD as String] default "Shipment",
+		},
+		orderLine: item.ORDERITEMID,
+		location: {
+			id: (item.LOCATIONID as String) default "s1"
+		},
+		product: {
+			id: item.PRODUCTID as String,
+			name: item.PRODUCTNAME
+		},
+		quantity: {
+			ordered: item.QUANTITY
+		}
+	}
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </when>
+            <otherwise>
+                <ee:transform doc:name="Transform Message" doc:id="4b5e2ec9-7b24-4fa7-a9c2-aa631d9c73c8">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "resource not found"
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+404]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </otherwise>
+        </choice>
+        <error-handler>
+            <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ae61b4a7-0b53-45fc-b1d1-925d04045f88">
+                <ee:transform doc:name="Transform Message" doc:id="799d80c7-2853-4093-8179-33df43669788">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-continue>
+        </error-handler>
+    </flow>
+    <flow name="post:\orders:application\json:order-api-for-commdix-mysql-config">
+        <set-variable value="#[[]]" doc:name="Set Variable" doc:id="e026fb0c-cc1a-424c-857c-28e35f0cd2fe" variableName="messages" />
+        <foreach doc:name="For Each" doc:id="3d7cc2d8-bb64-4d66-a719-1db5f021c363" collection="#[payload]">
+            <ee:transform doc:name="Transform Message" doc:id="8fa5f849-df51-43ee-b32a-44c5630cae20">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var orderType = {
+	pickupItems: "PII",
+	shipmentItems: "SHI",
+	partnersItems: "PAI"
+}
+var deliveryMethod = {
+	Pickup: "PI",
+	Shipment: "SH"
+}
+var status = {
+	"Draft": "D",
+	"Completed": "C",
+	"Processing": "P"
+}
+---
+{
+	( orderId: payload.orderId ) if (payload.orderId?),
+	customerId: payload.customerId,
+	status: status[payload.status as String] default "",
+	price: payload.totalAmount,
+	trackingNumber: randomInt(10000000),
+	items: 
+		payload.orderItems map (item, i) -> {
+			orderItemId: item.orderLine,
+			orderType: "SHI",
+			productId: item.product.id,
+			productName: item.product.name,
+			locationId: item.location.id default "s1",
+			deliveryMethod: deliveryMethod[upper(item.delivery.method as String default "Shipment")] default "SH",
+			quantity: item.quantity.ordered
+		}
+	
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="sqlInsert"><![CDATA[%dw 2.0
+output application/java
+---
+"INSERT INTO `orders`(" ++
+	(if(payload.orderId?) "`ORDERID`, " else "")
+	++ "`CUSTOMERID`, `STATUS`, `PRICE`, `TRACKINGNUMB`
+) VALUES (" ++
+	(if(payload.orderId?) ":orderId, " else "")
+	++ ":customerId, :status, :price, :trackingNumber);"]]></ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+            <set-variable value="#[payload.items]" doc:name="Set Variable items" doc:id="6c6a813c-2707-4c4f-b2d3-0d7a20533039" variableName="items" />
+            <db:insert doc:name="Insert new order" doc:id="3fc7d50b-deda-4d70-8f4d-6805738618f6" config-ref="Database_Config" autoGenerateKeys="true">
+                <db:sql>#[vars.sqlInsert]</db:sql>
+                <db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+                <db:auto-generated-keys-column-names>
+                    <db:auto-generated-keys-column-name value="ORDERID" />
+                </db:auto-generated-keys-column-names>
+            </db:insert>
+            <ee:transform doc:name="Save Order Id" doc:id="329139fe-fc18-486f-a176-d45757c6a104">
+                <ee:message />
+                <ee:variables>
+                    <ee:set-variable variableName="orderId"><![CDATA[%dw 2.0
+output application/java
+---
+payload.generatedKeys.GENERATED_KEY]]></ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+            <foreach doc:name="For Each" doc:id="ba2bd65b-53c6-40d7-accd-69ec0c148308" collection="#[vars.items]">
+                <db:insert doc:name="Insert new order item" doc:id="a15ed890-b43f-4388-915e-3b4c8439e7bc" config-ref="Database_Config">
+                    <db:sql>INSERT INTO `items` (`ORDERITEMID`, `TYPE`, `PRODUCTID`, `PRODUCTNAME`, `LOCATIONID`, `DELIVERYMETHOD`, `QUANTITY`, `ORDERID`) VALUES(:orderItemId, :orderType, :productId, :productName, :locationId, :deliveryMethod, :quantity, :orderId);</db:sql>
+                    <db:input-parameters><![CDATA[#[payload ++ {'orderId': vars.orderId}]]]></db:input-parameters>
+                </db:insert>
+            </foreach>
+            <ee:transform doc:name="Transform Message" doc:id="bfbee118-e1c1-495a-a9cb-f1c1e003527a">
+                <ee:message />
+                <ee:variables>
+                    <ee:set-variable variableName="messages"><![CDATA[%dw 2.0
+output application/java
+---
+vars.messages ++
+[
+	{
+      "itemId": vars.orderId,
+      "severity": "INFO",
+      "code": "201",
+      "description": "order record created"
+    }
+]]]></ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </foreach>
+        <ee:transform doc:name="Transform Message" doc:id="d915fa0e-8c45-4acd-ac8f-fc881e91ea77">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	meta: {
+		totalItems: sizeOf(vars.messages)
+	},
+	messages: vars.messages
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="convert-mysql-date-to-datetimeFlow" doc:id="69fade1b-c4e9-4357-8a76-930a986dc343">
+        <logger level="INFO" doc:name="Logger" doc:id="0cc7d0c3-a18f-4dda-b82e-aaafecc73d51" message="#[output application/json ---payload]" />
+        <ee:transform doc:name="Transform Message" doc:id="89798f50-9ddb-4cd5-9d33-6584311fa314">
+            <ee:message>
+                <ee:set-payload><![CDATA[output application/json
+var str=(payload replace 'T' with ' ') default '' splitBy ' '
+var creationDate=str[0]
+var creationTime=(str[1] ++ '.000') as LocalTime {format: "HH:mm:ss.SSS"} as String
+//
+var timeZone='GMT'
+//var formattedDate=(creationDate replace /\d{2}:\d{2}:\d{2} \w{3} / with '') as Date {format: "eee MMM dd yyyy"} as String
+//var formattedTime=((creationTime[11 to 18]) ++ '.000') as LocalTime {format: "HH:mm:ss.SSS"} as String
+var finalDateTime= (creationDate ++ ' ' ++ creationTime ++ ' ' ++ timeZone) as DateTime {format: "yyyy-MM-dd HH:mm:ss zz"}
+---
+finalDateTime as String {format: "yyyy-MM-dd'T'HH:mm:ssxxx"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
