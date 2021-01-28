@@ -1,0 +1,41 @@
+#%RAML 1.0 Library
+usage: Defines standard structure on an address
+
+types:
+  Address:
+    properties:
+      addressId?: 
+        example: "1"
+      type?: 
+        examples:
+          shipping: Shipping
+          billing: Billing
+          home: Personal
+          work: Work
+        default: billing
+      addressLines?:
+        description: Changed from string to array
+        type: array
+        items: string
+        minItems: 1
+        example: 
+          - 154 Douglas Fir Drive
+      city?: 
+        example: Waleska
+      state?: 
+        example: GA
+      postalCode?: 
+        example: "30183"
+      countryName?: 
+        displayName: United States of America
+        description: Country Name
+        example: United States
+        default: United States
+      countryCode?:
+        maxLength: 3
+        example: USA
+        default: USA
+      effectiveDates?:
+        properties: 
+          fromDate?: date-only
+          toDate?: date-only

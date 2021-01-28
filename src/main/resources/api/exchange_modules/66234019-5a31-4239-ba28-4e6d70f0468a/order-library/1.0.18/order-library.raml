@@ -1,0 +1,124 @@
+#%RAML 1.0 Library
+uses: 
+  address: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/postal-address-library/1.0.4/postal-address-library.raml
+  email: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/email-library/1.0.2/email-library.raml 
+  collection: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/collection-library/1.0.24/collection-library.raml
+  currency: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/currency-library/1.0.1/currency-library.raml
+  links: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/hypermedia-library/1.0.4/hypermedia-library.raml
+
+types:
+  Pickup:
+    properties: 
+      date: date-only
+      authorizedPeople?: 
+        type: array
+        items: 
+          properties:
+            firstName:
+            lastName:
+            phoneNumber: 
+            email.email?:
+      itemStatus?: OrderStatus
+    example: 
+      date: 2018-08-18
+      authorizedPeople:
+        - firstName: Brett
+          lastName: Roeder
+          phoneNumber: 415-030-2033
+  
+  Shipment:
+    properties: 
+      date: 
+        type: date-only
+        example: 2018-08-18
+      carrier?: 
+        examples: 
+          UPS: UPS
+          FedEx: FedEx
+          USPS: USPS
+      trackingNumber?: 
+        example: t12334345345
+      itemStatus?: OrderStatus
+
+  OrderItem: 
+    description: Information about ordered product (variant)
+    properties: 
+      orderLine: 
+        type: integer
+        example: 1
+      product:
+        properties: 
+          id?: 
+            example: 1234s
+          name?: 
+            example: Play dough
+      location:
+        properties:
+          type?: 
+            description: Store, Warehouse, Direct Shipper, ...
+            example: Store
+          id?: 
+            example: s1
+      sourceSystem?: 
+      delivery?: 
+        properties: 
+          method: 
+            enum: [ Shipment, Pickup ] 
+            default: Shipment
+            example: Shipment
+          shipment?: Shipment
+          pickup?:  Pickup
+      quantity:
+        properties: 
+          ordered: integer
+          shipped?: integer
+          backOrdered?: integer
+      pricing:
+        properties: 
+          itemAmount: number
+          discountPct?: number
+          totalAmount: number 
+      link?: links.Link
+
+  OrderStatus:
+    type: string
+    enum: [Draft, Processing, Completed, Canceled]
+
+  Payment:
+    properties:
+      id: 
+      dateTime: datetime
+      amount: number
+      links.Link?:
+
+  Order:
+    properties: 
+      customerId?: 
+      orderId?: 
+      sourceSystem?:
+      status?: OrderStatus
+      trackingNumber?: 
+      billingAddress?: address.Address
+      deliveryAddress?: address.Address
+      deliveryStatus?: 
+      currency?: currency.Currency
+      subTotal?: number
+      shippingCost?: number
+      taxAmount?: number
+      totalAmount?: number
+      payments?: Payment[]
+      email?: email.email
+      orderItems?: OrderItem[]
+    example: !include examples/member.raml
+
+  OrderCollection:
+    type:  Order[]
+    example: !include examples/collection.raml
+
+  OrderCollectionResponse:
+    type: collection.CollectionResponse
+    properties:
+      orders: 
+        type: Order[]
+        required: false
+    example: !include examples/collectionResponse.raml

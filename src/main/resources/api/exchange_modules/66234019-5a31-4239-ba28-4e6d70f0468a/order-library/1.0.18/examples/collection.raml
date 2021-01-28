@@ -1,0 +1,82 @@
+#%RAML 1.0 NamedExample
+- customerId: c1
+  orderId: o1
+  status: Draft
+  sourceSystem: SAP, Billing DB
+  trackingNumber: 1112cd
+  deliveryAddress: 
+    addressId: addr1
+    type: Home
+    addressLines: 
+      - 154 Douglas Fir Dr
+    city: Waleska
+    state: GA
+    postalCode: "30183"
+    countryCode: USA
+  deliveryStatus: Processing
+  currency: 
+    code: USD
+  subTotal: 100.00
+  shippingCost: 20.00
+  taxAmount: 6.00
+  totalAmount: 126.00
+  payments:
+    - id: p1
+      dateTime: 2018-08-18T12:13:14Z
+      amount: 126.00
+  email: 
+    type: Work
+    address: brett@gmail.com
+  orderItems: 
+    - orderLine: 1
+      product:
+        id: "1004100"
+        name: Men’s Thunder Jacket
+      location:
+        type: Store
+        id: s1
+      sourceSystem: SAP
+      delivery:
+        method: Shipment
+        shipment:
+          date: 2018-08-18
+          carrier: FedEx
+          trackingNumber: t123455
+      quantity:
+        ordered: 3
+        shipped: 2
+        backOrdered: 1
+      pricing:
+        itemAmount: 20.00
+        discountPct: 0.50
+        totalAmount:  30.00
+      link: 
+        href: http://localhost
+        title: Link to product
+    - orderLine: 2
+      product:
+        id: "1806100"
+        name: Men’s Single Track II
+      location:
+        type: Store
+        id: s1
+      sourceSystem: Billing DB
+      delivery:
+        method: Pickup
+        pickup:
+          date: 2018-08-18
+          authorizedPeople:
+            - firstName: Brett
+              lastName: Roeder
+              phoneNumber: 415-030-2033
+      quantity:
+        ordered: 4
+        shipped: 4
+        backOrdered: 0
+      pricing:
+        itemAmount: 20.00
+        discountPct: 0.25
+        totalAmount:  60.00
+      link: 
+        href: http://localhost
+        title: Link to product

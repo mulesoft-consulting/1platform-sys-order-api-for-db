@@ -1,0 +1,21 @@
+#%RAML 1.0 Library
+
+usage: |
+  provides a set of resusable data types that extend common types
+  to add linking and hypermedia to REST APIs
+
+types:
+  url:
+    type: string
+    example: http://mulesoft.com
+    
+  Link:
+    type: object
+    properties:
+      href:
+        type: url
+      title?:
+        type: string
+        example: MuleSoft
+        
+  Links: Link[]
